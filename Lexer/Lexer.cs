@@ -13,9 +13,18 @@ namespace MathParser
             ['-'] = Token.TokenType.SubtractionOperator,
             ['*'] = Token.TokenType.MultiplicationOperator,
             ['/'] = Token.TokenType.DivisionOperator,
-            ['^'] = Token.TokenType.ExponentialOperator,
+            ['^'] = Token.TokenType.ExponentialOperator
+        };
+
+        private readonly Dictionary<char, Token.TokenType> _auxiliaryTokens = new()
+        {
             ['('] = Token.TokenType.OpenParenthesis,
             [')'] = Token.TokenType.CloseParenthesis
+        };
+        
+        private readonly Dictionary<char, Token.TokenType> _unaryOperatorTokens = new()
+        {
+            ['-'] = Token.TokenType.NegateOperator,
         };
 
         public List<Token> Tokenize()
@@ -30,11 +39,21 @@ namespace MathParser
 
                 if (char.IsNumber(current))
                     HandleNumericDigit(i, tokens);
-                else if (_operatorTokens.TryGetValue(expression[i], out Token.TokenType tokenType))
-                    HandleSignDigit(i, tokens, tokenType);
+                else
+                    HandleSignDigit(i, tokens);
             }
 
             return tokens;
+        }
+
+        public bool IsOperator(Token token)
+        {
+            return _operatorTokens.ContainsValue(token.tokenType);
+        }
+        
+        public bool IsUnaryOperator(Token token)
+        {
+            return _unaryOperatorTokens.ContainsValue(token.tokenType);
         }
 
         private void HandleNumericDigit(int i, List<Token> tokens)
@@ -53,18 +72,18 @@ namespace MathParser
             }
         }
 
-        private void HandleSignDigit(int i, List<Token> tokens, Token.TokenType tokenType)
+        private void HandleSignDigit(int i, List<Token> tokens)
         {
-            bool canTreatAsNegate = i == 0 || tokens[^1].IsOperator() || tokens[^1].tokenType == Token.TokenType.OpenParenthesis;
-            bool isNegateInsteadOfSubtraction = canTreatAsNegate && tokenType == Token.TokenType.SubtractionOperator;
-                    
-            if (isNegateInsteadOfSubtraction)
+            bool isUnaryOperator = i == 0 || IsOperator(tokens[^1]) || tokens[^1].tokenType == Token.TokenType.OpenParenthesis;
+                
+            if (isUnaryOperator && _unaryOperatorTokens.TryGetValue(expression[i], out Token.TokenType tokenType))
             {
-                _negateNextValue = true;
-                return;
+                tokens.Add(new Token(Token.TokenType.NegateOperator, expression[i].ToString()));
             }
-                            
-            tokens.Add(new Token(tokenType, expression[i].ToString()));
+            else if (_operatorTokens.TryGetValue(expression[i], out tokenType) || _auxiliaryTokens.TryGetValue(expression[i], out tokenType))
+            {
+                tokens.Add(new Token(tokenType, expression[i].ToString()));
+            }
         }
     }
 }

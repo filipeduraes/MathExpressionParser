@@ -19,22 +19,38 @@ namespace MathParser
             return 0;
         }
 
-        private static IExpressionNode BuildBinaryExpressionTree(List<Token> tokens)
+        private IExpressionNode BuildBinaryExpressionTree(List<Token> tokens)
         {
             RemoveParenthesisAround(tokens);
 
-            if (tokens.Count == 1)
+            if (tokens.Count == 1 && tokens[0].tokenType == Token.TokenType.NumericLiteral)
                 return new ValueNode(tokens[0]);
 
             int lessPriorityOperator = GetOperatorWithSmallerPriority(tokens);
+            bool isUnaryOperator = lessPriorityOperator == -1 && _lexer.IsUnaryOperator(tokens[0]) && tokens.Count > 1;
+            
+            if (isUnaryOperator)
+                return CreateUnaryOperationNode(tokens);
 
-            List<Token> leftOperandTokens = tokens.GetRange(0, lessPriorityOperator);
-            List<Token> rightOperandTokens = tokens.GetRange(lessPriorityOperator + 1, tokens.Count - lessPriorityOperator - 1);
+            return CreateOperationNode(tokens, lessPriorityOperator);
+        }
+
+        private IExpressionNode CreateUnaryOperationNode(List<Token> tokens)
+        {
+            List<Token> operandTokens = tokens.GetRange(1, tokens.Count - 1);
+            IExpressionNode operand = BuildBinaryExpressionTree(operandTokens);
+            return new UnaryOperationNode(tokens[0], operand);
+        }
+
+        private IExpressionNode CreateOperationNode(List<Token> tokens, int operatorIndex)
+        {
+            List<Token> leftOperandTokens = tokens.GetRange(0, operatorIndex);
+            List<Token> rightOperandTokens = tokens.GetRange(operatorIndex + 1, tokens.Count - operatorIndex - 1);
 
             IExpressionNode leftOperand = BuildBinaryExpressionTree(leftOperandTokens);
             IExpressionNode rightOperand = BuildBinaryExpressionTree(rightOperandTokens);
             
-            return new OperationNode(tokens[lessPriorityOperator], leftOperand, rightOperand);
+            return new OperationNode(tokens[operatorIndex], leftOperand, rightOperand);
         }
 
         private static void RemoveParenthesisAround(List<Token> tokens)
@@ -49,7 +65,7 @@ namespace MathParser
             }
         }
 
-        private static int GetOperatorWithSmallerPriority(IReadOnlyList<Token> involvedTokens)
+        private int GetOperatorWithSmallerPriority(IReadOnlyList<Token> involvedTokens)
         {
             (int Index, int Priority) lessPriority = (-1, int.MaxValue);
             int openedParenthesis = 0;
@@ -59,9 +75,9 @@ namespace MathParser
                 Token involvedToken = involvedTokens[index];
                 openedParenthesis += GetParenthesisModifier(involvedToken);
 
-                if (openedParenthesis == 0 && involvedToken.IsOperator())
+                if (openedParenthesis == 0 && _lexer.IsOperator(involvedToken))
                 {
-                    if (index - 1 < 0 || involvedTokens[index - 1].IsOperator())
+                    if (index - 1 < 0 || _lexer.IsOperator(involvedTokens[index - 1]))
                         continue;
 
                     int operatorPriority = GetOperatorPriority(involvedToken.tokenType);
