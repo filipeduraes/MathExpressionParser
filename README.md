@@ -13,7 +13,7 @@ double result = parser.Evaluate();
 
 Current supported operators:
 - Addition (+)
-- Subtraction (-) -> Chich includes negative numbers
+- Subtraction (-) -> Which includes negative numbers
 - Multiplication (*)
 - Division (/)
 - Power (^) -> Can be used for radicals by inverting then. Ex.: Sqrt(3) would be 3 ^ (1 / 2)
