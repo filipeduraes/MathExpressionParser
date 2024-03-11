@@ -6,14 +6,17 @@ namespace MathParser
     {
         public static void Main(string[] args)
         {
-            string? expression = Console.ReadLine();
-
-            if (expression != null)
+            while (true)
             {
-                Parser parser = new(expression);
-                double result = parser.Parse();
-                
-                Console.WriteLine($"Result = {result}");
+                string? expression = Console.ReadLine();
+
+                if (expression != null)
+                {
+                    Parser parser = new(expression);
+                    double result = parser.Parse();
+                    
+                    Console.WriteLine($"Result = {result}");
+                }
             }
         }
     }

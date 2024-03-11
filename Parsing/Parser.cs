@@ -60,6 +60,23 @@ namespace MathParser
             
             if (isSurroundedByParenthesis)
             {
+                bool hasOpenParenthesis = false;
+                
+                for (int i = 1; i < tokens.Count - 1; i++)
+                {
+                    if (tokens[i].tokenType == Token.TokenType.OpenParenthesis)
+                    {
+                        hasOpenParenthesis = true;
+                    }
+                    else if (tokens[i].tokenType == Token.TokenType.CloseParenthesis)
+                    {
+                        if(!hasOpenParenthesis)
+                            return;
+                        
+                        hasOpenParenthesis = false;
+                    }
+                }
+
                 tokens.RemoveAt(0);
                 tokens.RemoveAt(tokens.Count - 1);
             }
@@ -70,7 +87,7 @@ namespace MathParser
             (int Index, int Priority) lessPriority = (-1, int.MaxValue);
             int openedParenthesis = 0;
             
-            for (int index = 0; index < involvedTokens.Count; index++)
+            for (int index = involvedTokens.Count - 1; index >= 0; index--)
             {
                 Token involvedToken = involvedTokens[index];
                 openedParenthesis += GetParenthesisModifier(involvedToken);
